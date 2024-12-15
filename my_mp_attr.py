@@ -276,7 +276,6 @@ def extract_mediapipe_attributes(image_path):
                     actions=["age", "gender", "race"],
                     enforce_detection=False,
                 )
-    print(f"~~~~objs keys: {objs[0].keys()}")
     objs[0].pop("gender")
     objs[0].pop("region")
     objs[0].pop("face_confidence")
