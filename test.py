@@ -1,6 +1,7 @@
 # import os
 # import torch
 # import csv
+# import sys
 # from PIL import Image
 # from torchvision import transforms, models
 # import torch.nn as nn
@@ -8,15 +9,15 @@
 # from langchain_core.prompts import ChatPromptTemplate
 # from langchain_groq import ChatGroq
 # from my_mp_attr import extract_mediapipe_attributes
-# from deepface import DeepFace
+# # from deepface import DeepFace
 # from dotenv import load_dotenv
 
 # load_dotenv()
-# IMAGE_FOLDER_PATH=os.getenv("IMAGE_FOLDER_PATH")
-# CSV_PATH=os.getenv("CSV_PATH")
+# IMAGE_FOLDER_PATH = os.getenv("IMAGE_FOLDER_PATH")
+# CSV_PATH = os.getenv("CSV_PATH")
 # IMAGE_PATH = os.getenv("IMAGE_PATH")
 # MODEL_PATH = os.getenv("MODEL_PATH")   
-# API_PATH=os.getenv("API_PATH") 
+# API_PATH = os.getenv("API_PATH") 
 
 # # List of attribute names from CelebA dataset
 # attribute_names = [
@@ -104,7 +105,7 @@
 #         keys = file.readlines()
 #         for key in keys:
 #             api_keys.append(key.strip('\n'))
-#     print(f"@@@@@@@@@api_keys: {api_keys}")
+#     # print(f"@@@@@@@@@api_keys: {api_keys}")
 #     if not api_keys:
 #         print("No API keys found. Exiting.")
 #         return
@@ -115,38 +116,49 @@
 #     # Load the model
 #     model = load_model(model_path, device)
 
+#     # Get starting image index from command-line argument
+#     try:
+#         start_index = int(input("Enter the starting index:"))
+#     except ValueError:
+#         print("Invalid starting index. Please provide a valid integer.")
+#         return
+
 #     # Open the CSV file for writing
 #     with open(output_csv, mode='w', newline='', encoding='utf-8') as file:
 #         writer = csv.writer(file)
 #         writer.writerow(["Image Name", "Description"])
 
 #         # Process each image in the folder
-#         for image_name in sorted(os.listdir(folder_path)):
-#             if image_name.lower().endswith(('.png', '.jpg', '.jpeg')):
-#                 image_path = os.path.join(folder_path, image_name)
-#                 print(f"Processing {image_name}...")
+#         image_files = sorted([f for f in os.listdir(folder_path) if f.lower().endswith(('.png', '.jpg', '.jpeg'))])
 
-#                 try:
-#                     # Preprocess the image
-#                     input_image = preprocess_image(image_path, device)
+#         for index, image_name in enumerate(image_files, start=1):
+#             if index < start_index:
+#                 continue  # Skip images before the starting index
 
-#                     # Make predictions
-#                     predictions = make_predictions(model, input_image)
+#             image_path = os.path.join(folder_path, image_name)
+#             print(f"Processing {image_name}...")
 
-#                     # Extract mediapipe attributes
-#                     mediapipe_attributes = extract_mediapipe_attributes(image_path)
+#             try:
+#                 # Preprocess the image
+#                 input_image = preprocess_image(image_path, device)
 
-#                     # Generate description
-#                     description = interpret_predictions(predictions, mediapipe_attributes, api_keys)
+#                 # Make predictions
+#                 predictions = make_predictions(model, input_image)
 
-#                     # Write to CSV
-#                     writer.writerow([image_name, description])
-#                     print(f"Processed {image_name}: {description}")
-#                 except ValueError as e:
-#                     print(f"Skipping {image_name} due to error: {e}")
-#                 except RuntimeError as e:
-#                     print(f"Stopping processing due to error: {e}")
-#                     break
+#                 # Extract mediapipe attributes
+#                 mediapipe_attributes = extract_mediapipe_attributes(image_path)
+
+#                 # Generate description
+#                 description = interpret_predictions(predictions, mediapipe_attributes, api_keys)
+
+#                 # Write to CSV
+#                 writer.writerow([image_name, description])
+#                 print(f"Processed {image_name}: {description}")
+#             except ValueError as e:
+#                 print(f"Skipping {image_name} due to error: {e}")
+#             except RuntimeError as e:
+#                 print(f"Stopping processing due to error: {e}")
+#                 break
 
 # if __name__ == '__main__':
 #     main()
@@ -165,10 +177,10 @@ from my_mp_attr import extract_mediapipe_attributes
 from deepface import DeepFace
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv()  
 IMAGE_FOLDER_PATH = os.getenv("IMAGE_FOLDER_PATH")
 CSV_PATH = os.getenv("CSV_PATH")
-IMAGE_PATH = os.getenv("IMAGE_PATH")
+# IMAGE_PATH = os.getenv("IMAGE_PATH")
 MODEL_PATH = os.getenv("MODEL_PATH")   
 API_PATH = os.getenv("API_PATH") 
 
@@ -271,15 +283,19 @@ def main():
 
     # Get starting image index from command-line argument
     try:
-        start_index = int(input("Enter the starting index:")) if len(sys.argv) > 1 else 1
+        start_index = int(input("Enter the starting index:"))
     except ValueError:
         print("Invalid starting index. Please provide a valid integer.")
         return
 
-    # Open the CSV file for writing
-    with open(output_csv, mode='w', newline='', encoding='utf-8') as file:
+    # Check if the file exists and has content
+    file_exists = os.path.isfile(output_csv) and os.path.getsize(output_csv) > 0
+
+    with open(output_csv, mode='a', newline='', encoding='utf-8') as file:
         writer = csv.writer(file)
-        writer.writerow(["Image Name", "Description"])
+        # Add the header only if the file is empty
+        if not file_exists:
+            writer.writerow(["Image Name", "Description"])
 
         # Process each image in the folder
         image_files = sorted([f for f in os.listdir(folder_path) if f.lower().endswith(('.png', '.jpg', '.jpeg'))])
