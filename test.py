@@ -240,7 +240,7 @@ def interpret_predictions(predictions, mediapipe_attributes, api_keys):
         try:
             chat = ChatGroq(temperature=0,
                             groq_api_key=api_key, 
-                            model_name="llama-3.1-70b-versatile")
+                            model_name="llama-3.3-70b-versatile")
 
             system = "You are a helpful assistant and does not generate anything else other than face description"
             human = "Generate a natural language description of the face appearance from {text}. include all given attributes in a natural language description. Don't exaggerate the gender. "

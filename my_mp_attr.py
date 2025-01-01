@@ -185,6 +185,7 @@ import cv2
 import mediapipe as mp
 import numpy as np
 from deepface import DeepFace
+from utils import skin
 # from df import deepanalyse
 
 def extract_mediapipe_attributes(image_path):
@@ -221,30 +222,14 @@ def extract_mediapipe_attributes(image_path):
             left_eye_ratio = extract_eye_features([33, 133, 159, 145])
             right_eye_ratio = extract_eye_features([362, 398, 386, 374])
             face_description["eye_shape"] = "Almond-shaped" if left_eye_ratio > 1.8 and right_eye_ratio > 1.8 else "Round"
-            
+
             # Additional eye attributes
             face_description["eye_expression"] = "Wide-eyed" if left_eye_ratio > 2 else "Relaxed"
 
             # Skin tone and texture
-            cheek_x = int(face_landmarks.landmark[234].x * image.shape[1])
-            cheek_y = int(face_landmarks.landmark[234].y * image.shape[0])
-            cheek_region = image[max(cheek_y - 10, 0):min(cheek_y + 10, image.shape[0]), 
-                                 max(cheek_x - 10, 0):min(cheek_x + 10, image.shape[1])]
-
-            if cheek_region.size > 0:
-                cheek_region_lab = cv2.cvtColor(cheek_region, cv2.COLOR_BGR2Lab)
-                avg_l, avg_a, avg_b = np.mean(cheek_region_lab, axis=(0, 1))
-
-                normalized_l = avg_l / 255
-                normalized_a = (avg_a - 128) / 128
-                normalized_b = (avg_b - 128) / 128
-
-                if normalized_l > 0.7 and normalized_a < 0.15 and normalized_b < 0.15:
-                    face_description["skin_tone"] = "Fair"
-                elif 0.5 <= normalized_l <= 0.7:
-                    face_description["skin_tone"] = "Medium"
-                else:
-                    face_description["skin_tone"] = "Dark"
+            face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
+            skin_tone = skin.calculate_skin_tone(image, face_cascade)
+            face_description["skin_tone"] = skin_tone
 
             # Lips and mouth
             mouth_width = calculate_distance(face_landmarks.landmark[61], face_landmarks.landmark[291])
@@ -253,12 +238,7 @@ def extract_mediapipe_attributes(image_path):
 
             # Nose attributes
             nose_bridge_height = calculate_distance(face_landmarks.landmark[6], face_landmarks.landmark[4])
-            print(f"********************************nose_bridge_height:{nose_bridge_height}")
             face_description["nose_shape"] = "Pointed" if nose_bridge_height < 0.1 else "Flat"
-
-            # Hair attributes (if detectable from landmarks)
-            # face_description["hair_length"] = "Short"  # Requires external inference for hair length
-            # face_description["hair_texture"] = "Unknown"
 
             # Facial symmetry
             symmetry_ratio = np.mean([
@@ -268,20 +248,20 @@ def extract_mediapipe_attributes(image_path):
             face_description["facial_symmetry"] = "Symmetric" if 0.95 <= symmetry_ratio <= 1.05 else "Asymmetric"
 
     face_mesh.close()
-    # objs = deepanalyse(rf"{image_path}")                   
-    # print(f"Deepface: {objs}")   
+
     print(f"mediapipe: {face_description}")
     objs = DeepFace.analyze(
-                    img_path=rf"{image_path}",
-                    actions=["age", "gender", "race"],
-                    enforce_detection=False,
-                )
+        img_path=rf"{image_path}",
+        actions=["age", "gender", "race"],
+        enforce_detection=False,
+    )
     objs[0].pop("gender")
     objs[0].pop("region")
     objs[0].pop("face_confidence")
     objs[0].pop("race")
     face_description["deepface_attributes"] = objs[0]
     return face_description
+
 
 ################################################################
 
