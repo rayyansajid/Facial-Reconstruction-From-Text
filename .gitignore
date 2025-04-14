@@ -1,3 +1,7 @@
 ChatGroq_API_keys.txt
 .env
 exhausted.txt
+logs
+GAN.py
+__pycache__
+docker_cmd.txt

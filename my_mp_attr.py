@@ -259,6 +259,8 @@ def extract_mediapipe_attributes(image_path):
     objs[0].pop("region")
     objs[0].pop("face_confidence")
     objs[0].pop("race")
+    print(objs)
+    # quit()
     face_description["deepface_attributes"] = objs[0]
     return face_description
 
