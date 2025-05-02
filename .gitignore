@@ -6,3 +6,5 @@ GAN.py
 __pycache__
 docker_cmd.txt
 *.pth
+.qodo
+*.jpg

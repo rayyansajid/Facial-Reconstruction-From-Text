@@ -59,9 +59,9 @@ def generate_description(predicted_attributes, mediapipe_attributes):
     combined_attributes = predicted_attributes + [f"{k}: {v}" for k, v in mediapipe_attributes.items()]
     chat = ChatGroq(temperature=0,
                     groq_api_key=API_KEY,
-                    model_name="llama-3.1-70b-versatile")
+                    model_name="llama-3.3-70b-versatile")
     system = "You are a helpful assistant and does not generate anything else other than face description"
-    human = "Generate a natural language description of the face appearance from {text}. Include all given attributes in a natural language description. Don't exaggerate the gender."
+    human = "Generate a natural language description of the face appearance from {text}. Include all given attributes in a natural language description. Don't exaggerate the gender. Just mention it once"
     prompt = ChatPromptTemplate.from_messages([("system", system), ("human", human)])
     chain = prompt | chat
     res = chain.invoke({"text": f"These are facial attributes detected from an image: {combined_attributes}"})
